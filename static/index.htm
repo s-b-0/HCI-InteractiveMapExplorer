@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+
+<head>
+
+  <title>NYC Boba</title>
+  <meta charset="utf-8" />
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.14.2/highlight.min.js"></script>
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+  <script src="https://d3js.org/topojson.v2.min.js"></script>
+
+  <style>
+    body {
+      background-color: #ffebda;
+      font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    }
+
+    h1,
+    h2 {
+      text-align: center;
+
+    }
+
+    h1,
+    h2,
+    h3,
+    p,
+    span {
+      color: #604d49;
+    }
+
+    h1 {
+      font-size: 70px;
+    }
+
+    h2 {
+      font-size: 50px;
+    }
+
+    p {
+      font-size: 30px;
+    }
+
+    .intro-text,
+    .second-text {
+      margin-top: 50px;
+      margin-left: 25%;
+      margin-right: 25%;
+      margin-bottom: 70px;
+      text-indent: 4em;
+      /* or 15px, or 5%, 2rem or 3vw */
+    }
+
+    span,
+    .desc p {
+      line-height: 25px;
+      font-size: 17px;
+    }
+
+    #contain {
+      display: flex;
+      justify-content: center;
+    }
+
+    #side {
+      display: flex;
+      flex-direction: column;
+      margin-left: 45px;
+      width: 350px;
+    }
+
+    .filters {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .row {
+      display: flex;
+    }
+
+    .row span {
+      margin: 4.5px 0px;
+    }
+
+    .col {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    button {
+      margin: 5px;
+      font-size: 18px;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    #filterbutton {
+      margin-top: 25px;
+      border: none;
+      background-color: #604d49;
+      color: #ffff;
+    }
+
+    #filterbutton:hover {
+      background-color: #937f74;
+      cursor: pointer;
+    }
+
+    #clearbutton {
+      color: #604d49;
+      border: 3px #604d49 solid;
+      background-color: #ffff;
+    }
+
+    #clearbutton:hover {
+      background-color: #eaeaea;
+      cursor: pointer;
+    }
+
+    #button {
+      margin-top: -20px;
+      margin-left: 40px;
+    }
+
+    .neighborhood {
+      fill: #d2b799;
+      /* d2b799 */
+      stroke: #f0e7e0;
+      stroke-width: 1px;
+    }
+
+    rect.handle {
+      display: none;
+    }
+
+    rect.overlay {
+      display: none;
+    }
+
+    .txts {
+      font-family: Arial, sans-serif;
+    }
+
+    #graph {
+      margin-bottom: 110px;
+    }
+
+    .all-graph-sliders {
+      display: flex;
+      justify-content: center;
+      margin-top: 70px;
+      margin-bottom: 40px;
+      color: #604d49;
+    }
+
+    .graph-slider {
+      margin-left: 60px;
+      margin-right: 60px;
+    }
+
+    #teaSlider {
+      accent-color: #d2b799;
+    }
+
+    #bobaSlider {
+      accent-color: #222222;
+    }
+
+    #iceSlider {
+      accent-color: #b3faff;
+    }
+
+    tr td {
+      padding-bottom: 40px;
+    }
+  </style>
+
+</head>
+
+<body>
+
+  <h1>Welcome! Expore the NYC Boba Scene</h1>
+
+  <div class="intro-text">
+    <p>
+      Slowly but surely, New York City's boba scene keeps growing. The craze over tapioca pearls
+      swimming in tea-based drinks, aka bubble tea, started in Taiwan. But these days, international chains
+      and small businesses keep popping up thanks to everyone's endless appetite for the drinks.
+    <p>
+    <p>
+      With such diverse flavors, it can be overwhelming to choose from teas, toppings, and milk options in a store.
+      But how do you find a store in the first place??!? If only there were a way to visualise shop distributions
+      across NYC... oh wait... THERE IS! The interactive map below should help you get a better idea of where you
+      might want to stop by.
+    </p>
+  </div>
+
+  <h2>Find your new favorite boba place. The world is your oyster.</h2>
+
+  <div id="contain">
+
+    <svg width="1200" height="900">
+      <g id="map" width="1200" height="900"></g>
+      <g id="minim" width="280" height="280" transform="translate(900,1)">
+        <rect x="0" y="0" width="280" height="280" stroke="darkgrey" fill="white" opacity="1" />
+      </g>
+    </svg>
+
+    <div id="side">
+      <div class="desc">
+        <p>
+          Zoom, pan, and drag to interact. Filter by boro or shop types.</p>
+      </div>
+
+
+      <h3>Filter by Borough:</h3>
+
+      <div class="row">
+        <div class="col">
+          <span class="check"><input type="checkbox" class="neighborhoodcheckbox" name="Bronx"
+              value="Bronx">Bronx</span>
+          <span class="check"><input type="checkbox" class="neighborhoodcheckbox" name="Brooklyn"
+              value="Brooklyn">Brooklyn</span>
+          <span class="check"><input type="checkbox" class="neighborhoodcheckbox" name="Manhattan"
+              value="Manhattan">Manhattan</span>
+        </div>
+
+        <div class="col">
+          <span class="check"><input type="checkbox" class="neighborhoodcheckbox" name="Queens"
+              value="Queens">Queens</span>
+          <span class="check"><input type="checkbox" class="neighborhoodcheckbox" name="Staten Island"
+              value="Staten Island">Staten Island</span>
+        </div>
+      </div>
+
+      <div class="filters">
+        <h3>Filter by Category:</h3>
+
+        <div class="row">
+          <div class="col">
+            <span class="check"><input type="checkbox" class="checkbox" name="acaibowls" value="acaibowls">Acai
+              Bowls&#129481;</span>
+            <span class="check"><input type="checkbox" class="checkbox" name="cafes" value="cafes">Cafes&#9749;</span>
+            <span class="check"><input type="checkbox" class="checkbox" name="coffee"
+                value="coffee">Coffee&Tea&#127861;</span>
+            <span class="check"><input type="checkbox" class="checkbox" name="desserts"
+                value="desserts">Desserts&#127842;</span>
+            <span class="check"><input type="checkbox" class="checkbox" name="donuts"
+                value="donuts">Donuts&#127849;</span>
+            <span class="check"><input type="checkbox" class="checkbox" name="icecream" value="icecream">Ice
+              Cream&#127848;</span>
+          </div>
+
+          <div class="col">
+            <span class="check"><input type="checkbox" class="checkbox" name="intlgrocery"
+                value="intlgrocery">International&#127857;</span>
+            <span class="check"><input type="checkbox" class="checkbox" name="juicebars" value="juicebars">Juice
+              Bars&#127865;</span>
+            <span class="check"><input type="checkbox" class="checkbox" name="poke" value="poke">Poke
+              Bowls&#127834;</span>
+            <span class="check"><input type="checkbox" class="checkbox" name="sushi" value="sushi">Sushi&#127843;</span>
+            <span class="check"><input type="checkbox" class="checkbox" name="noodles"
+                value="noodles">Noodles&#127836;</span>
+            <span class="check"><input type="checkbox" class="checkbox" name="tabletopgames"
+                value="tabletopgames">Tabletop Games&#129497;</span>
+          </div>
+        </div>
+
+        <button type="button" id="filterbutton" name="button">Filter!</button>
+        <button type="button" id="clearbutton" name="button" class="clear">clear</button>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="second-text">
+    <p>
+      Now that you've settled on a shop, what's the best way to enjoy it?
+      When you drink bubble tea, you might like to finish with the same
+      proportions of boba and tea that you started at. Or maybe you've felt frustrated before when
+      the ice melts at a horrifically faster rate than you can drink your tea.
+    </p>
+    <p>
+      This next visualization simulates optimized sip strategies based on personal preferences when it comes
+      to tea drinking.
+    </p>
+  </div>
+
+  <h2>Customize your drink order to discover optimized boba consumption per sip!</h2>
+
+
+  <div class="all-graph-sliders">
+    <table class="graph-slider how" style="width: auto">
+      <tr>
+        <th colspan="3">% Tea Consumption</th>
+      </tr>
+      <tr>
+        <td>Not much tea sipping, slow pace.</td>
+        <td><input type="range" name="teaSlider" id="teaSlider" value="0" min="0" max="0.011" step="0.001"
+            style="width: 200px;">
+        </td>
+        <td style="text-align: right;"><span class="teaSlider"></span>Sip like life depends on it!!</td>
+      </tr>
+      <tr id="slidertitle 2">
+        <th colspan="3">% Boba Consumption</th>
+      </tr>
+      <tr>
+        <td>In the boba conservation society</td>
+        <td><input type="range" name="bobaSlider" id="bobaSlider" value="0" min="-0.015" max="0.015" step="0.003"
+            style="width: 200px;">
+        </td>
+        <td style="text-align: right;"><span class="bobaSlider"></span>Chew boba at record speed!</td>
+      </tr>
+      <tr id="slidertitle 3">
+        <th colspan="3">% Ice melted per sip</th>
+      </tr>
+      <tr>
+        <td>Keep that ice cold and plentiful...</td>
+        <td><input type="range" name="iceSlider" id="iceSlider" value="0" min="-0.005" max="0.01" step="0.0015"
+            style="width: 200px;">
+        </td>
+        <td style="text-align: right;"><span class="iceSlider"></span>Let the ice melt yippee!!!</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- meep -->
+  <div id="contain">
+    <svg id="graph"></svg>
+  </div>
+
+
+  <script id="map-code">
+
+    //var a = "['a', 'b', 'c']";
+    //console.log(a);
+    //a = a.replace(/'/g, '"');
+    //a = JSON.parse(a);
+    //console.log(a);
+
+    // define map & mini map dimensions
+    const map = d3.select("svg g#map");
+    const mapWidth = map.attr("width");
+    const mapHeight = map.attr("height");
+    const chartArea = map.append("g");
+    const minim = d3.select("svg g#minim");
+    const minimWidth = minim.attr("width");
+    const minimHeight = minim.attr("height");
+    const minimArea = minim.append("g").attr("opacity", 0.5);
+
+
+    // appending mini map features, as shown in lecture
+    map.append("defs").append("clipPath")
+      .attr("id", "chartClip")
+      .append("rect").attr("x", 0)
+      .attr("y", 0)
+      .attr("width", mapWidth)
+      .attr("height", mapHeight);
+    const menu = d3.select("#menu");
+    map.attr("clip-path", "url(#chartClip)");
+    minim.append("defs").append("clipPath")
+      .attr("id", "minichartClip")
+      .append("rect").attr("x", 0)
+      .attr("y", 0)
+      .attr("width", minimWidth)
+      .attr("height", minimHeight);
+    minim.attr("clip-path", "url(#minichartClip)");
+
+
+    // data time woop woop
+    const requestdata = async function () {
+
+      // load boba csv + NYC map
+      const ydata = await d3.csv("boba_nyc_v2.csv");
+      const pdata = await d3.json("NTA.topo.json");
+
+      // define interactive surface area
+      chartArea.append("rect").attr("x", 0).attr("y", 0)
+        .attr("width", mapWidth).attr("height", mapHeight)
+        .attr("fill", "none")
+        .style("pointer-events", "all");
+
+      // map & mini map projections
+      var pitt = topojson.feature(pdata, pdata.objects.collection); // .collection = Neighborhoods_
+      var pittproj = d3.geoMercator().fitSize([900, mapHeight], pitt);
+      var pittpath = d3.geoPath().projection(pittproj);
+      var pitt_mini = topojson.feature(pdata, pdata.objects.collection);
+      var pittproj_mini = d3.geoMercator().fitSize([minimWidth, minimHeight], pitt_mini);
+      var pittpath_mini = d3.geoPath().projection(pittproj_mini);
+
+      // map & mini map restaurant long/lat
+      ydata.forEach(d => { d.Position = pittproj([d.longitude, d.latitude]); });
+      ydata.forEach(d => { d.mini_Position = pittproj_mini([d.longitude, d.latitude]); });
+
+      // draw map & mini map projections
+      chartArea.selectAll("path.neighborhood").data(pitt.features)
+        .join("path")
+        .attr("class", "neighborhood")
+        .attr("d", pittpath);
+      minimArea.selectAll("path.neighborhood").data(pitt.features)
+        .join("path")
+        .attr("class", "neighborhood")
+        .attr("d", pittpath_mini);
+
+      let brushGroup = minimArea.append("g").attr("class", "brush");
+
+      // add bobas to big map 
+      function updatemap(data) {
+        let circles = chartArea.selectAll("image").data(data)
+          .join("image")
+          .attr("xlink:href", "bl_circle_tmp.png")
+          .attr("x", d => d.Position[0])
+          .attr("y", d => d.Position[1])
+          .attr("opacity", 0.5)
+          //.attr("height", 50)
+          //.attr("width", 50)
+          .on("mouseenter", handlemouseenter)
+          .on("mouseout", handlemouseout);
+
+
+        function handlemouseenter() {
+          let c = d3.select(this);
+          c.attr("xlink:href", "bobaball_still.png")
+            .attr("opacity", 1);
+          rectimg.attr("xlink:href", c.datum().image_url);
+
+          txt.text(c.datum().name);
+          txt2.text(c.datum().price); // c.datum().category).toUpperCase()
+          if (c.datum().rating == 1.0) {
+            txt3.text("★");
+          } else if (c.datum().rating == 1.5) {
+            txt3.text("★ ½");
+          } else if (c.datum().rating == 2.0) {
+            txt3.text("★ ★");
+          } else if (c.datum().rating == 2.5) {
+            txt3.text("★ ★ ½");
+          } else if (c.datum().rating == 3.0) {
+            txt3.text("★ ★ ★");
+          } else if (c.datum().rating == 3.5) {
+            txt3.text("★ ★ ★ ½");
+          } else if (c.datum().rating == 4.0) {
+            txt3.text("★ ★ ★ ★");
+          } else if (c.datum().rating == 4.5) {
+            txt3.text("★ ★ ★ ★ ½");
+          } else if (c.datum().rating == 5.0) {
+            txt3.text("★ ★ ★ ★ ★");
+          };
+
+          tooltip.style("visibility", "visible")
+            .attr("transform", "translate(" + (c.datum().Position[0] - 125) + ", " + (c.datum().Position[1] + 45) + ")");
+        }
+
+        function handlemouseout() {
+          let c = d3.select(this);
+          c.attr("xlink:href", "bl_circle_tmp.png")
+            .attr("opacity", 0.5);
+          tooltip.style("visibility", "hidden");
+        }
+
+        // adding tooltip
+        let tooltip = chartArea.append("g")
+          .attr("class", "tooltip")
+          .attr("visibility", "hidden");
+        let hover = tooltip.append("rect")
+          .attr("fill", "#937f74")
+          .attr("stroke", "#604d49")
+          .attr("rx", 8)
+          .attr("width", 300)
+          .attr("height", 100);
+        let txt = tooltip.append("text")
+          .attr("class", "txts")
+          .attr("x", 300 / 2.0)
+          .attr("y", 25)
+          .attr("font-weight", "900")
+          .attr("fill", "#ffffff")
+          .attr("text-anchor", "middle")
+          .attr("alignment-baseline", "central");
+        let txt2 = tooltip.append("text")
+          .attr("class", "txts")
+          .attr("x", 300 / 2.0)
+          .attr("y", 50)
+          .attr("fill", "#ffffff")
+          .attr("text-anchor", "middle")
+          .attr("alignment-baseline", "central");
+        let txt3 = tooltip.append("text")
+          .attr("class", "txts")
+          .attr("x", 300 / 2.0)
+          .attr("y", 75)
+          .attr("text-anchor", "middle")
+          .attr("fill", "#ffffff")
+          .attr("alignment-baseline", "central");
+
+        let rectimg = tooltip.append("image")
+          .attr("x", 70)
+          .attr("y", 40)
+          .attr("width", 75)
+          .attr("height", 45);
+
+        // populate restaurants on mini map
+        let circles_mini = minimArea.selectAll("circle").data(ydata)
+          .join("circle")
+          .attr("cx", d => d.mini_Position[0])
+          .attr("cy", d => d.mini_Position[1])
+          .attr("r", 2)
+          .attr("fill", "#222222")
+          .attr("opacity", 0.5);
+
+        // zooming capabilities
+        let zoomExtent = [[0, 0], [900, mapHeight]];
+        let translateExtent = [[-100, -100], [1000, 1000]];
+        var plotZoom = d3.zoom()
+          .extent(zoomExtent)
+          .translateExtent(translateExtent)
+          .scaleExtent([1, 8])
+          .on("zoom", plotZoomed);
+
+        map.call(plotZoom);
+
+        // adding brush
+        let brush = d3.brush()
+          .extent([[0, 0], [minimWidth, minimHeight]])
+          .on("brush", brushed)
+        brushGroup.call(brush)
+
+        // zoom fxn, as per lecture
+        function plotZoomed(event) {
+
+          let transform = event.transform;
+          chartArea.attr("transform", transform);
+
+          function getcoords(x, y, transform) {
+            var xn = (x - transform.x) / transform.k;
+            var yn = (y - transform.y) / transform.k;
+            return [xn, yn];
+          }
+          minimBounds = [pittproj_mini(
+            pittproj.invert(getcoords(0, 0, event.transform))),
+          pittproj_mini(pittproj.invert(getcoords(mapWidth, mapHeight, event.transform))
+          )]
+
+          circles.attr("width", 50 / transform.k);
+          circles.attr("height", 50 / transform.k);
+          x_translate = 125 / transform.k;
+          y_translate = 46 / transform.k;
+
+          hover.attr("width", 300 / transform.k)
+            .attr("height", 100 / transform.k)
+            .attr("rx", 8 / transform.k)
+            .attr("transform", "translate(" + (125 - x_translate) + ", " + (-45 + y_translate) + ")");
+          txt.attr("font-size", 14 / transform.k)
+            .attr("x", 300 / 2.0 / transform.k)
+            .attr("y", 25 / transform.k)
+            .attr("transform", "translate(" + (125 - x_translate) + ", " + (-45 + y_translate) + ")");
+          txt2.attr("font-size", 12 / transform.k)
+            .attr("x", 300 / 2.0 / transform.k)
+            .attr("y", 50 / transform.k)
+            .attr("transform", "translate(" + (125 - x_translate) + ", " + (-45 + y_translate) + ")");
+          txt3.attr("font-size", 14 / transform.k)
+            .attr("x", 300 / 2.0 / transform.k)
+            .attr("y", 75 / transform.k)
+            .attr("transform", "translate(" + (125 - x_translate) + ", " + (-45 + y_translate) + ")");
+          rectimg.attr("width", 75 / transform.k)
+            .attr("height", 45 / transform.k)
+            .attr("x", 70 / transform.k)
+            .attr("y", 40 / transform.k)
+            .attr("transform", "translate(" + (125 - x_translate) + ", " + (-45 + y_translate) + ")");
+
+          brushGroup.call(brush.move, minimBounds)
+        }
+
+        function brushed({ sourceEvent, selection }) {
+          // need to catch that infinite loop, define fxn as per lecture
+          if (sourceEvent === undefined) {
+            return;
+          }
+          let transform = d3.zoomTransform(chartArea.node());
+          let upperleft = pittproj_mini.invert([selection[0][0], selection[0][1]])
+          let lowerright = pittproj_mini.invert([selection[1][0], selection[1][1]])
+          transform.x = selection[0][0] - (pittproj(upperleft)[0]) * transform.k;
+          transform.y = selection[0][1] - (pittproj(upperleft)[1]) * transform.k;
+          map.call(plotZoom.transform, transform);
+        }
+        map.call(plotZoom.transform, d3.zoomIdentity);
+      }
+      updatemap(ydata);
+
+
+      // checkbox filtering
+      d3.select("button").on("click", function () {
+        var checked = [];
+        var checked_nbhd = []
+        var boxes = d3.selectAll("input.checkbox:checked");
+        var boxes_nbhd = d3.selectAll("input.neighborhoodcheckbox:checked");
+        boxes.each(function () {
+          checked.push(this.value)
+        });
+        boxes_nbhd.each(function () {
+          checked_nbhd.push(this.value)
+        });
+        newdata = ydata.filter((d) => {
+          let pcf = false;
+          let pnf = false;
+
+          if (checked.length === 0) {
+            pcf = true;
+          } else {
+            checked.forEach((category, i) => {
+              pcf = pcf || d['catlist'].includes(category)
+            });
+          }
+
+          if (checked_nbhd.length === 0) {
+            pnf = true;
+          } else {
+            checked_nbhd.forEach((neighborhood, i) => {
+              pnf = pnf || d['boro_name'] === neighborhood
+            });
+          }
+          return pcf && pnf;
+        })
+        updatemap(newdata)
+        updateminim(newdata)
+      });
+
+      //clear checkbox
+      d3.select(".clear").on("click", function () {
+        d3.selectAll('input').property('checked', false);
+        d3.select("#menu").remove();
+        updatemap(ydata)
+        updateminim(ydata)
+      });
+
+
+      function updateminim(data) {
+        var pitt_mini = topojson.feature(pdata, pdata.objects.Neighborhoods_);
+        var pittproj_mini = d3.geoMercator().fitSize([minimWidth, minimHeight], pitt_mini);
+        var pittpath_mini = d3.geoPath().projection(pittproj_mini);
+
+        data.forEach(d => {
+          d.mini_Position = pittproj_mini([d.longitude, d.latitude]);
+        });
+
+        let circles_mini = minimArea.selectAll("circle").data(data)
+          .join("circle")
+          .attr("r", 2)
+          .attr("fill", "#fc6e61")
+          .attr("opacity", 0.5)
+          .attr("cx", d => d.mini_Position[0])
+          .attr("cy", d => d.mini_Position[1]);
+      };
+    };
+    requestdata();
+
+    // ok second vis let's do this
+    // meep
+    const margin = { top: 10, right: 50, bottom: 50, left: 50 },
+      width = 1400 - margin.left - margin.right,
+      height = 400 - margin.top - margin.bottom;
+
+    const svg = d3.select("#graph").attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // Define chart area
+    svg
+      .append("clipPath")
+      .attr("id", "chart-area")
+      .append("rect")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", width)
+      .attr("height", height)
+
+    // Add Axes
+    const xMax = 80;
+    const yMax = 700;
+
+    let xScale = d3.scaleLinear([0, xMax], [0, width])
+    let yScale = d3.scaleLinear([0, yMax], [height, 0])
+
+    let xAxis = d3.axisBottom(xScale)
+    let yAxis = d3.axisLeft(yScale)
+    svg.append("g")
+      .attr("transform", `translate(0,${height})`)
+      .call(xAxis)
+    svg.append("g")
+      .attr("transform", `translate(0,0)`)
+      .call(yAxis)
+
+    // Axes label
+    svg.append("text")
+      .attr("class", "x label")
+      .attr("text-anchor", "end")
+      .attr("x", width / 2 + 5)
+      .attr("y", height + 35)
+      .attr("fill", "#604d49")
+      .attr("font-size", 25)
+      .text("No. of sips");
+
+    svg.append("text")
+      .attr("class", "y label")
+      .attr("text-anchor", "end")
+      .attr("y", -35)
+      .attr("x", -height / 2)
+      .attr("fill", "#604d49")
+      .attr("font-size", 25)
+      .attr("transform", "rotate(-90)")
+      .text("Volume (ml)")
+
+
+    // boba fxn make data
+    function graphfxn_boba() {
+      pointNum = 500;
+
+      const data = [];
+      for (let x = 0; x <= pointNum; x++) {
+        y = 778 * Math.exp(-0.025 * x) - 77;
+        data.push([x, y])
+      }
+      return data;
+    }
+    // ice fxn make data
+    function graphfxn_ice() {
+      pointNum = 500;
+
+      const data = [];
+      for (let x = 0; x <= pointNum; x++) {
+        y = 685 * Math.exp(-0.02131 * x) - 96.51;
+        data.push([x, y])
+      }
+      return data;
+    }
+    // tea fxn make data
+    function graphfxn_tea() {
+      pointNum = 500;
+
+      const data = [];
+      for (let x = 0; x <= pointNum; x++) {
+        y = 721.9 * Math.exp(-0.01157 * x) - 279.2;
+        data.push([x, y])
+      }
+      return data;
+    }
+
+    // area generator
+    let areaGen = d3
+      .area()
+      .x((d) => xScale(d[0]))
+      .y0(yScale(0))
+      .y1((d) => yScale(d[1]));
+
+
+    // add boba area to chart
+    svg
+      .append("path")
+      .datum(graphfxn_boba())
+      .attr("id", "boba_area")
+      .attr("clip-path", "url(#chart-area)")
+      .attr("fill", "#222222")
+      .attr("stroke", "#222222")
+      .attr("stroke-width", 1)
+      .attr("d", areaGen);
+    // add ice area to chart
+    svg
+      .append("path")
+      .datum(graphfxn_ice())
+      .attr("id", "ice_area")
+      .attr("clip-path", "url(#chart-area)")
+      .attr("fill", "#b3faff") // # b3faff
+      .attr("stroke", "#74a7b0")
+      .attr("stroke-width", 1)
+      .attr("d", areaGen);
+    // add tea area to chart
+    svg
+      .append("path")
+      .datum(graphfxn_tea())
+      .attr("id", "tea_area")
+      .attr("clip-path", "url(#chart-area)")
+      .attr("fill", "#d2b799")
+      .attr("stroke", "#a38e77")
+      .attr("stroke-width", 1)
+      .attr("d", areaGen);
+
+    // update boba area when slider is moved (just curve steepness for boba)
+    // update chart when slider is moved
+    function updateChart_boba(val) {
+
+      // boba fxn make data
+      function graphfxn_boba() {
+        pointNum = 500;
+        tmpNum = Number(val);
+
+        const data = [];
+        for (let x = 0; x <= pointNum; x++) {
+          y = 778 * Math.exp(-(0.025 + tmpNum) * x) - 77;
+          console.log(y);
+          data.push([x, y])
+        }
+        return data;
+      }
+      // clear chart of old area
+      d3.selectAll("#boba_area").remove();
+
+      // update chart
+      // add boba area to chart
+      svg
+        .append("path")
+        .datum(graphfxn_boba())
+        .attr("id", "boba_area")
+        .attr("clip-path", "url(#chart-area)")
+        .attr("fill", "#222222")
+        .attr("stroke", "#222222")
+        .attr("stroke-width", 1)
+        .attr("d", areaGen);
+
+      // make sure areas appear in correct order
+      d3.selectAll("#boba_area").lower();
+
+    }
+
+    // Listen to the slider call update fxn
+    d3.select("#bobaSlider").on("change", function (d) {
+      selectedValue = this.value
+      console.log(selectedValue)
+      updateChart_boba(selectedValue)
+    })
+
+    // update ice area when slider is moved (curve steepness + slight height for ice)
+    // update chart when slider is moved
+    function updateChart_ice(val) {
+
+      // ice fxn make data
+      function graphfxn_ice() {
+        pointNum = 500;
+        xco = Number(val);
+        eco = xco * 10000;
+
+        const data = [];
+        for (let x = 0; x <= pointNum; x++) {
+          y = (685 + eco) * Math.exp(-(0.02131 + xco) * x) - 96.51;
+          data.push([x, y])
+        }
+        return data;
+      }
+      // clear chart of old area
+      d3.selectAll("#ice_area").remove();
+
+      // update chart
+      // add ice area to chart
+      svg
+        .append("path")
+        .datum(graphfxn_ice())
+        .attr("id", "ice_area")
+        .attr("clip-path", "url(#chart-area)")
+        .attr("fill", "#b3faff") // # b3faff
+        .attr("stroke", "#74a7b0")
+        .attr("stroke-width", 1)
+        .attr("d", areaGen);
+
+      // make sure areas appear in correct order
+      d3.selectAll("#tea_area").raise();
+
+    }
+
+    // Listen to the slider call update fxn
+    d3.select("#iceSlider").on("change", function (d) {
+      selectedValue = this.value
+      //console.log(selectedValue)
+      updateChart_ice(selectedValue)
+    })
+
+    // update tea area when slider is moved (curve steepness + slight height for ice)
+    // update chart when slider is moved
+    function updateChart_tea(val) {
+
+      // tea fxn make data
+      function graphfxn_tea() {
+        pointNum = 500;
+        xco = Number(val);
+
+        const data = [];
+        for (let x = 0; x <= pointNum; x++) {
+          y = 721.9 * Math.exp(-(0.01157 + xco) * x) - 279.2;
+          data.push([x, y])
+        }
+        return data;
+      }
+      // clear chart of old area
+      d3.selectAll("#tea_area").remove();
+
+      // update chart
+      // add tea area to chart
+      svg
+        .append("path")
+        .datum(graphfxn_tea())
+        .attr("id", "tea_area")
+        .attr("clip-path", "url(#chart-area)")
+        .attr("fill", "#d2b799")
+        .attr("stroke", "#a38e77")
+        .attr("stroke-width", 1)
+        .attr("d", areaGen);
+
+      // make sure areas appear in correct order
+
+    }
+
+    // Listen to the slider call update fxn
+    d3.select("#teaSlider").on("change", function (d) {
+      selectedValue = this.value
+      //console.log(selectedValue)
+      updateChart_tea(selectedValue)
+    })
+
+  </script>
+</body>
+
+</html>
